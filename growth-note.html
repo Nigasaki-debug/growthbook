@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Note</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #faf6ec;
+    --paper-shadow: #e7ddc4;
+    --line-blue: #b9d3e6;
+    --ink: #2b3a4a;
+    --ink-soft: #55677a;
+    --margin-red: #c85a4e;
+    --highlight: #f4d35e;
+    --tab-manila: #ddb98a;
+    --tab-manila-dark: #c9a172;
+    --cover: #33465a;
+    --cover-dark: #263547;
+    --spiral: #9aa7b0;
+    --danger: #b3483f;
+    --ok: #4f7d5c;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Patrick Hand', cursive;
+    background: var(--cover);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03), transparent 40%);
+    color: var(--ink);
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding: 28px 14px;
+    min-height:100%;
+  }
+
+  .notebook{
+    position:relative;
+    width:100%;
+    max-width:900px;
+    background: var(--cover);
+    border-radius: 10px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.35), 0 2px 0 rgba(255,255,255,0.05) inset;
+    padding: 18px 18px 18px 34px;
+  }
+
+  .cover-title{
+    font-family:'Caveat', cursive;
+    color: #f2ead9;
+    font-size: 2rem;
+    font-weight:700;
+    margin: 4px 4px 14px 10px;
+    letter-spacing: 0.5px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .cover-title span{
+    font-family:'Special Elite', monospace;
+    font-size: 0.7rem;
+    color: #b9c6d4;
+    letter-spacing: 1px;
+  }
+
+  .spiral{
+    position:absolute;
+    left: 10px;
+    top: 70px;
+    bottom: 26px;
+    width: 20px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    z-index: 5;
+  }
+  .spiral i{
+    display:block;
+    width:20px;height:20px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 35%, #c7d0d6, var(--spiral) 60%, #5c6b74 100%);
+    box-shadow: inset -2px -2px 3px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.4);
+  }
+
+  .page-frame{
+    position:relative;
+    background: var(--paper);
+    border-radius: 4px 8px 8px 4px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25), 0 0 0 1px var(--paper-shadow);
+    min-height: 560px;
+    perspective: 1800px;
+    overflow: visible;
+  }
+
+  .tabs{
+    position:absolute;
+    top: 26px;
+    right: -34px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+    z-index: 20;
+  }
+  .tab-btn{
+    font-family:'Patrick Hand', cursive;
+    font-size: 1.05rem;
+    background: var(--tab-manila);
+    color: #4a3a24;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px 10px 12px;
+    cursor: pointer;
+    box-shadow: 2px 3px 6px rgba(0,0,0,0.25);
+    transform: translateX(-6px);
+    transition: transform 0.15s ease, background 0.15s ease;
+    text-align:left;
+  }
+  .tab-btn:hover{ transform: translateX(0px); }
+  .tab-btn.active{
+    background: var(--paper);
+    color: var(--ink);
+    transform: translateX(0px);
+    box-shadow: 2px 3px 6px rgba(0,0,0,0.25), inset 0 0 0 1px var(--paper-shadow);
+    font-weight:700;
+  }
+
+  .page-viewport{
+    position:relative;
+    padding: 26px 30px 30px 46px;
+    min-height:560px;
+  }
+  .page-viewport::before{
+    content:"";
+    position:absolute;
+    left: 34px;
+    top:0; bottom:0;
+    width: 2px;
+    background: var(--margin-red);
+    opacity: 0.55;
+  }
+  .page-viewport::after{
+    content:"";
+    position:absolute;
+    left: 0; right:0; top:0; bottom:0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 31px,
+      var(--line-blue) 32px
+    );
+    opacity:0.35;
+    pointer-events:none;
+  }
+
+  .page{
+    position:relative;
+    z-index: 2;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    transform-origin: left center;
+  }
+  .page.flip-out{ animation: flipOut 0.34s ease forwards; }
+  .page.flip-in{ animation: flipIn 0.34s ease forwards; }
+  @keyframes flipOut{
+    from{ transform: rotateY(0deg); opacity:1; }
+    to{ transform: rotateY(-92deg); opacity: 0.4; }
+  }
+  @keyframes flipIn{
+    from{ transform: rotateY(92deg); opacity: 0.4; }
+    to{ transform: rotateY(0deg); opacity:1; }
+  }
+
+  h2.page-title{
+    font-family:'Caveat', cursive;
+    font-size: 1.9rem;
+    margin: 0 0 14px 0;
+    color: var(--ink);
+    border-bottom: 2px dashed var(--line-blue);
+    padding-bottom: 6px;
+  }
+
+  .row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .field{
+    flex:1;
+    min-width: 140px;
+    font-family:'Patrick Hand', cursive;
+    font-size: 1.05rem;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid var(--line-blue);
+    background: transparent;
+    color: var(--ink);
+  }
+  .field:focus{ outline:none; border-bottom-color: var(--margin-red); }
+  textarea.field{ resize: vertical; min-height: 48px; font-family:'Patrick Hand', cursive; }
+
+  button{
+    font-family:'Patrick Hand', cursive;
+    font-size: 1rem;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-ink{
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 16px;
+    border-radius: 6px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+  }
+  .btn-ink:hover{ background: var(--cover-dark); }
+  .btn-ghost{
+    background: transparent;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    padding: 4px 6px;
+    font-size: 0.95rem;
+  }
+  .btn-ghost.danger{ color: var(--danger); }
+
+  .add-form{ margin-bottom: 18px; }
+
+  .cards{ display:flex; flex-direction:column; gap: 12px; }
+
+  .note-card{
+    background: #fffdf6;
+    border: 1px solid var(--paper-shadow);
+    border-left: 5px solid var(--highlight);
+    border-radius: 3px;
+    padding: 10px 14px;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.08);
+  }
+  .note-card h3{
+    margin: 0 0 4px 0;
+    font-family:'Caveat', cursive;
+    font-size: 1.4rem;
+  }
+  .note-card p{ margin: 0 0 6px 0; white-space: pre-wrap; line-height:1.35; }
+  .meta{
+    font-family:'Special Elite', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+  }
+  .card-actions{ margin-top: 6px; display:flex; gap:10px; }
+
+  .task-card{
+    background: #fffdf6;
+    border: 1px solid var(--paper-shadow);
+    border-radius: 3px;
+    padding: 10px 14px;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.08);
+  }
+  .task-head{ display:flex; align-items:center; gap:10px; }
+  .task-head input[type=checkbox]{ width:18px; height:18px; accent-color: var(--ok); }
+  .task-title{ font-family:'Caveat', cursive; font-size: 1.35rem; flex:1; }
+  .task-title.done{ text-decoration: line-through; color: var(--ink-soft); }
+  .flag{
+    font-size:0.7rem;
+    font-family:'Special Elite', monospace;
+    padding: 2px 7px;
+    border-radius: 10px;
+    color: #fff;
+  }
+  .flag.high{ background: var(--danger); }
+  .flag.med{ background: #c98a3d; }
+  .flag.low{ background: var(--ok); }
+  .progress-wrap{
+    background: var(--paper-shadow);
+    height: 6px;
+    border-radius: 4px;
+    margin: 8px 0 6px 0;
+    overflow:hidden;
+  }
+  .progress-bar{ height:100%; background: var(--ok); }
+  .subtasks{ margin: 6px 0 0 6px; padding-left: 14px; border-left: 2px dotted var(--line-blue); }
+  .subtask-row{ display:flex; align-items:center; gap:8px; margin: 4px 0; }
+  .subtask-row input[type=checkbox]{ accent-color: var(--ok); }
+  .subtask-row span.done{ text-decoration: line-through; color: var(--ink-soft); }
+  .subtask-add{ display:flex; gap:8px; margin-top: 6px; }
+  .subtask-add input{ flex:1; font-size:0.95rem; padding:4px 6px; }
+  .due{ font-family:'Special Elite', monospace; font-size:0.72rem; color: var(--ink-soft); }
+
+  .empty{
+    font-family:'Caveat', cursive;
+    font-size: 1.3rem;
+    color: var(--ink-soft);
+    text-align:center;
+    padding: 30px 10px;
+    border: 2px dashed var(--line-blue);
+    border-radius: 6px;
+  }
+
+  #web-canvas{
+    width:100%;
+    height: 440px;
+    background: repeating-linear-gradient(to bottom, transparent 0 31px, var(--line-blue) 32px);
+    background-color: rgba(255,255,255,0.3);
+    border: 1px solid var(--paper-shadow);
+    border-radius: 6px;
+    cursor: grab;
+    display:block;
+  }
+  .web-hint{
+    font-family:'Special Elite', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .web-tooltip{
+    position:absolute;
+    background: var(--ink);
+    color: var(--paper);
+    font-family:'Special Elite', monospace;
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    border-radius: 4px;
+    pointer-events:none;
+    display:none;
+    z-index: 30;
+    max-width: 220px;
+  }
+
+  @media (max-width: 620px){
+    .notebook{ padding: 14px 10px 14px 26px; }
+    .tabs{ right: -8px; }
+    .tab-btn{ font-size: 0.9rem; padding: 8px 10px 8px 8px; }
+    .page-viewport{ padding: 22px 14px 24px 30px; }
+    .page-viewport::before{ left: 20px; }
+    #web-canvas{ height: 340px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .page.flip-out, .page.flip-in{ animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="notebook">
+  <div class="cover-title">Growth Note <span>notes · tasks · connections</span></div>
+  <div class="spiral" id="spiral"></div>
+
+  <div class="page-frame">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="notes">📝 Notes</button>
+      <button class="tab-btn" data-tab="tasks">☑ Tasks</button>
+      <button class="tab-btn" data-tab="web">🕸 Web</button>
+    </div>
+
+    <div class="page-viewport">
+      <div class="page" id="page-root"></div>
+      <div class="web-tooltip" id="web-tooltip"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'growth-note-data';
+  let state = { notes: [], tasks: [] };
+  let currentTab = 'notes';
+  let loaded = false;
+
+  const pageRoot = document.getElementById('page-root');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+
+  const storageApi = window.storage ? {
+    async get(key, defaultValue){
+      const res = await window.storage.get(key, defaultValue);
+      return res && Object.prototype.hasOwnProperty.call(res, 'value') ? res : { value: defaultValue };
+    },
+    async set(key, value){
+      await window.storage.set(key, value, false);
+    }
+  } : {
+    async get(key, defaultValue){
+      try{
+        const raw = localStorage.getItem(key);
+        return { value: raw === null ? defaultValue : raw };
+      }catch(e){
+        return { value: defaultValue };
+      }
+    },
+    async set(key, value){
+      try{
+        localStorage.setItem(key, value);
+      }catch(e){
+        console.error('local storage save failed', e);
+      }
+    }
+  };
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  async function loadState(){
+    try{
+      const res = await storageApi.get(STORE_KEY, false);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        state.notes = parsed.notes || [];
+        state.tasks = parsed.tasks || [];
+      }
+    }catch(e){
+      console.warn('No saved data yet or storage load failed', e);
+    }
+    loaded = true;
+    render();
+  }
+
+  let saveTimer = null;
+  function saveState(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async ()=>{
+      try{
+        await storageApi.set(STORE_KEY, JSON.stringify(state));
+      }catch(e){ console.error('save failed', e); }
+    }, 200);
+  }
+
+  // ---------- Notes ----------
+  function renderNotes(){
+    const wrap = document.createElement('div');
+
+    const title = document.createElement('h2');
+    title.className = 'page-title';
+    title.textContent = 'Notes';
+    wrap.appendChild(title);
+
+    const form = document.createElement('div');
+    form.className = 'add-form';
+    form.innerHTML = `
+      <div class="row" style="margin-bottom:6px;">
+        <input class="field" id="note-title" placeholder="Note title...">
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <textarea class="field" id="note-body" placeholder="Write it down..."></textarea>
+      </div>
+      <button class="btn-ink" id="note-add-btn">+ Add note</button>
+    `;
+    wrap.appendChild(form);
+
+    const cards = document.createElement('div');
+    cards.className = 'cards';
+
+    if(state.notes.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'This page is blank. Jot your first note above.';
+      cards.appendChild(empty);
+    } else {
+      [...state.notes].sort((a,b)=> b.createdAt - a.createdAt).forEach(note=>{
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        const d = new Date(note.createdAt);
+        card.innerHTML = `
+          <h3>${escapeHtml(note.title || 'Untitled')}</h3>
+          <p>${escapeHtml(note.body || '')}</p>
+          <div class="meta">${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="card-actions">
+            <button class="btn-ghost" data-edit="${note.id}">edit</button>
+            <button class="btn-ghost danger" data-del="${note.id}">delete</button>
+          </div>
+        `;
+        cards.appendChild(card);
+      });
+    }
+    wrap.appendChild(cards);
+    pageRoot.appendChild(wrap);
+
+    wrap.querySelector('#note-add-btn').addEventListener('click', ()=>{
+      const t = wrap.querySelector('#note-title').value.trim();
+      const b = wrap.querySelector('#note-body').value.trim();
+      if(!t && !b) return;
+      state.notes.push({ id: uid(), title: t, body: b, createdAt: Date.now() });
+      saveState();
+      renderTab();
+    });
+
+    cards.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        state.notes = state.notes.filter(n=> n.id !== btn.dataset.del);
+        saveState();
+        renderTab();
+      });
+    });
+    cards.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const note = state.notes.find(n=> n.id === btn.dataset.edit);
+        if(!note) return;
+        const newTitle = prompt('Edit title:', note.title);
+        if(newTitle === null) return;
+        const newBody = prompt('Edit note:', note.body);
+        if(newBody === null) return;
+        note.title = newTitle.trim();
+        note.body = newBody.trim();
+        saveState();
+        renderTab();
+      });
+    });
+  }
+
+  // ---------- Tasks ----------
+  const STOPWORDS = new Set(['the','a','an','to','of','for','and','or','in','on','at','with','is','it','this','that','be','are','was','were','my','our','i','me','get','got','do','does']);
+
+  function keywordsOf(text){
+    return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w=> w.length>2 && !STOPWORDS.has(w));
+  }
+
+  function taskProgress(task){
+    if(!task.subtasks || task.subtasks.length===0) return task.completed ? 1 : 0;
+    const done = task.subtasks.filter(s=>s.done).length;
+    return done / task.subtasks.length;
+  }
+
+  function renderTasks(){
+    const wrap = document.createElement('div');
+    const title = document.createElement('h2');
+    title.className = 'page-title';
+    title.textContent = 'Tasks';
+    wrap.appendChild(title);
+
+    const form = document.createElement('div');
+    form.className = 'add-form';
+    form.innerHTML = `
+      <div class="row" style="margin-bottom:6px;">
+        <input class="field" id="task-title" placeholder="Main task...">
+        <select class="field" id="task-priority" style="flex:0 0 110px;">
+          <option value="low">Low</option>
+          <option value="med" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        <input class="field" id="task-due" type="date" style="flex:0 0 150px;">
+      </div>
+      <button class="btn-ink" id="task-add-btn">+ Add task</button>
+    `;
+    wrap.appendChild(form);
+
+    const cards = document.createElement('div');
+    cards.className = 'cards';
+
+    if(state.tasks.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No tasks yet. Add your first main task above, then break it into steps.';
+      cards.appendChild(empty);
+    } else {
+      state.tasks.forEach(task=>{
+        const pct = Math.round(taskProgress(task)*100);
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.innerHTML = `
+          <div class="task-head">
+            <input type="checkbox" data-toggle-main="${task.id}" ${task.completed?'checked':''}>
+            <span class="task-title ${task.completed?'done':''}">${escapeHtml(task.title)}</span>
+            <span class="flag ${task.priority}">${task.priority}</span>
+          </div>
+          <div class="due">${task.due ? ('due ' + task.due) : ''} ${task.subtasks.length? '· '+task.subtasks.filter(s=>s.done).length+'/'+task.subtasks.length+' steps' : ''}</div>
+          <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+          <div class="subtasks" data-sub-list="${task.id}"></div>
+          <div class="subtask-add">
+            <input type="text" placeholder="Add a step..." data-sub-input="${task.id}">
+            <button class="btn-ghost" data-sub-add="${task.id}">+ step</button>
+          </div>
+          <div class="card-actions">
+            <button class="btn-ghost" data-edit-task="${task.id}">edit</button>
+            <button class="btn-ghost danger" data-del-task="${task.id}">delete</button>
+          </div>
+        `;
+        cards.appendChild(card);
+
+        const subList = card.querySelector(`[data-sub-list="${task.id}"]`);
+        task.subtasks.forEach(sub=>{
+          const row = document.createElement('div');
+          row.className = 'subtask-row';
+          row.innerHTML = `
+            <input type="checkbox" data-sub-toggle="${sub.id}" data-parent="${task.id}" ${sub.done?'checked':''}>
+            <span class="${sub.done?'done':''}">${escapeHtml(sub.text)}</span>
+            <button class="btn-ghost danger" style="font-size:0.8rem;" data-sub-del="${sub.id}" data-parent2="${task.id}">×</button>
+          `;
+          subList.appendChild(row);
+        });
+      });
+    }
+    wrap.appendChild(cards);
+    pageRoot.appendChild(wrap);
+
+    wrap.querySelector('#task-add-btn').addEventListener('click', ()=>{
+      const t = wrap.querySelector('#task-title').value.trim();
+      if(!t) return;
+      const priority = wrap.querySelector('#task-priority').value;
+      const due = wrap.querySelector('#task-due').value;
+      state.tasks.push({ id: uid(), title: t, priority, due, completed:false, subtasks: [] });
+      saveState();
+      renderTab();
+    });
+
+    cards.querySelectorAll('[data-toggle-main]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const task = state.tasks.find(x=>x.id===cb.dataset.toggleMain);
+        task.completed = cb.checked;
+        if(cb.checked) task.subtasks.forEach(s=> s.done = true);
+        saveState();
+        renderTab();
+      });
+    });
+    cards.querySelectorAll('[data-sub-toggle]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const task = state.tasks.find(x=>x.id===cb.dataset.parent);
+        const sub = task.subtasks.find(s=>s.id===cb.dataset.subToggle);
+        sub.done = cb.checked;
+        if(task.subtasks.length && task.subtasks.every(s=>s.done)) task.completed = true;
+        else task.completed = false;
+        saveState();
+        renderTab();
+      });
+    });
+    cards.querySelectorAll('[data-sub-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const task = state.tasks.find(x=>x.id===btn.dataset.parent2);
+        task.subtasks = task.subtasks.filter(s=>s.id !== btn.dataset.subDel);
+        saveState();
+        renderTab();
+      });
+    });
+    cards.querySelectorAll('[data-sub-add]').forEach(btn=>{
+      const doAdd = ()=>{
+        const input = cards.querySelector(`[data-sub-input="${btn.dataset.subAdd}"]`);
+        const val = input.value.trim();
+        if(!val) return;
+        const task = state.tasks.find(x=>x.id===btn.dataset.subAdd);
+        task.subtasks.push({ id: uid(), text: val, done:false });
+        task.completed = false;
+        saveState();
+        renderTab();
+      };
+      btn.addEventListener('click', doAdd);
+    });
+    cards.querySelectorAll('[data-sub-input]').forEach(input=>{
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          const btn = cards.querySelector(`[data-sub-add="${input.dataset.subInput}"]`);
+          btn.click();
+        }
+      });
+    });
+    cards.querySelectorAll('[data-del-task]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        state.tasks = state.tasks.filter(t=>t.id !== btn.dataset.delTask);
+        saveState();
+        renderTab();
+      });
+    });
+    cards.querySelectorAll('[data-edit-task]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const task = state.tasks.find(t=>t.id===btn.dataset.editTask);
+        const newTitle = prompt('Edit task title:', task.title);
+        if(newTitle === null) return;
+        task.title = newTitle.trim() || task.title;
+        saveState();
+        renderTab();
+      });
+    });
+  }
+
+  // ---------- Web ----------
+  let webAnimFrame = null;
+  let webNodes = [];
+  let webEdges = [];
+  let dragNode = null;
+  let dragOffset = {x:0,y:0};
+  let hoverNode = null;
+
+  function buildWebGraph(){
+    const mainTasks = state.tasks;
+    webNodes = mainTasks.map((t,i)=>({
+      id: t.id,
+      title: t.title,
+      pct: taskProgress(t),
+      priority: t.priority,
+      keywords: new Set(t.subtasks.flatMap(s=>keywordsOf(s.text))),
+      x: 400 + Math.cos(i) * 120 + Math.random()*40,
+      y: 220 + Math.sin(i) * 90 + Math.random()*40,
+      vx:0, vy:0,
+      r: 26
+    }));
+    webEdges = [];
+    for(let i=0;i<webNodes.length;i++){
+      for(let j=i+1;j<webNodes.length;j++){
+        const a = webNodes[i], b = webNodes[j];
+        const shared = [...a.keywords].filter(k=> b.keywords.has(k));
+        if(shared.length>0){
+          webEdges.push({ a: a.id, b: b.id, shared });
+        }
+      }
+    }
+  }
+
+  function renderWeb(){
+    const wrap = document.createElement('div');
+    const title = document.createElement('h2');
+    title.className = 'page-title';
+    title.textContent = 'Task Web';
+    wrap.appendChild(title);
+
+    if(state.tasks.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Add some tasks with steps first — related tasks will connect here automatically.';
+      wrap.appendChild(empty);
+      pageRoot.appendChild(wrap);
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'web-canvas';
+    canvas.width = 820;
+    canvas.height = 440;
+    wrap.appendChild(canvas);
+
+    const hint = document.createElement('div');
+    hint.className = 'web-hint';
+    hint.textContent = 'Tasks sharing similar step keywords are linked. Drag nodes to rearrange, hover a line to see the shared keyword.';
+    wrap.appendChild(hint);
+
+    pageRoot.appendChild(wrap);
+
+    buildWebGraph();
+    setupWebInteraction(canvas);
+    runWebSimulation(canvas);
+  }
+
+  function runWebSimulation(canvas){
+    const ctx = canvas.getContext('2d');
+    cancelAnimationFrame(webAnimFrame);
+
+    function tick(){
+      const W = canvas.width, H = canvas.height;
+      // physics
+      for(let i=0;i<webNodes.length;i++){
+        const n = webNodes[i];
+        if(n === dragNode) continue;
+        let fx=0, fy=0;
+        for(let j=0;j<webNodes.length;j++){
+          if(i===j) continue;
+          const o = webNodes[j];
+          let dx = n.x-o.x, dy = n.y-o.y;
+          let dist = Math.sqrt(dx*dx+dy*dy)||0.01;
+          const rep = 2600 / (dist*dist);
+          fx += (dx/dist) * rep;
+          fy += (dy/dist) * rep;
+        }
+        // center pull
+        fx += (W/2 - n.x) * 0.004;
+        fy += (H/2 - n.y) * 0.004;
+        n.vx = (n.vx + fx*0.02) * 0.85;
+        n.vy = (n.vy + fy*0.02) * 0.85;
+      }
+      webEdges.forEach(e=>{
+        const a = webNodes.find(n=>n.id===e.a);
+        const b = webNodes.find(n=>n.id===e.b);
+        if(!a||!b) return;
+        let dx = b.x-a.x, dy = b.y-a.y;
+        let dist = Math.sqrt(dx*dx+dy*dy)||0.01;
+        const target = 180;
+        const spring = (dist-target)*0.002;
+        if(a !== dragNode){ a.vx += dx/dist*spring; a.vy += dy/dist*spring; }
+        if(b !== dragNode){ b.vx -= dx/dist*spring; b.vy -= dy/dist*spring; }
+      });
+      webNodes.forEach(n=>{
+        if(n===dragNode) return;
+        n.x += n.vx; n.y += n.vy;
+        n.x = Math.max(n.r+4, Math.min(canvas.width-n.r-4, n.x));
+        n.y = Math.max(n.r+4, Math.min(canvas.height-n.r-4, n.y));
+      });
+
+      // draw
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle = 'rgba(43,58,74,0.35)';
+      ctx.lineWidth = 1.5;
+      webEdges.forEach(e=>{
+        const a = webNodes.find(n=>n.id===e.a);
+        const b = webNodes.find(n=>n.id===e.b);
+        if(!a||!b) return;
+        const isHover = hoverNode && (hoverNode===a || hoverNode===b);
+        ctx.strokeStyle = isHover ? 'rgba(200,90,78,0.9)' : 'rgba(43,58,74,0.3)';
+        ctx.lineWidth = isHover ? 2.5 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      });
+      webNodes.forEach(n=>{
+        const color = n.priority==='high' ? '#c85a4e' : n.priority==='med' ? '#c98a3d' : '#4f7d5c';
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.fillStyle = '#fffdf6';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        // progress ring
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r+4, -Math.PI/2, -Math.PI/2 + n.pct*Math.PI*2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#2b3a4a';
+        ctx.font = '13px Patrick Hand, cursive';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        wrapCanvasText(ctx, n.title, n.x, n.y, n.r*1.7, 13);
+      });
+
+      webAnimFrame = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  function wrapCanvasText(ctx, text, cx, cy, maxWidth, lineHeight){
+    const words = text.split(' ');
+    let lines = [];
+    let line = '';
+    words.forEach(w=>{
+      const test = line ? line + ' ' + w : w;
+      if(ctx.measureText(test).width > maxWidth && line){
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    });
+    if(line) lines.push(line);
+    lines = lines.slice(0,2);
+    const startY = cy - ((lines.length-1) * lineHeight)/2;
+    lines.forEach((l,i)=> ctx.fillText(l, cx, startY + i*lineHeight));
+  }
+
+  function setupWebInteraction(canvas){
+    const tooltip = document.getElementById('web-tooltip');
+
+    function getPos(e){
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (clientX-rect.left)*scaleX, y: (clientY-rect.top)*scaleY, clientX, clientY };
+    }
+
+    function nodeAt(pos){
+      return webNodes.find(n=>{
+        const dx=n.x-pos.x, dy=n.y-pos.y;
+        return Math.sqrt(dx*dx+dy*dy) <= n.r;
+      });
+    }
+    function edgeAt(pos){
+      for(const e of webEdges){
+        const a = webNodes.find(n=>n.id===e.a);
+        const b = webNodes.find(n=>n.id===e.b);
+        if(!a||!b) continue;
+        const d = pointToSegDist(pos, a, b);
+        if(d < 6) return e;
+      }
+      return null;
+    }
+    function pointToSegDist(p, a, b){
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const len2 = dx*dx+dy*dy || 1;
+      let t = ((p.x-a.x)*dx + (p.y-a.y)*dy)/len2;
+      t = Math.max(0, Math.min(1,t));
+      const px = a.x+t*dx, py = a.y+t*dy;
+      return Math.sqrt((p.x-px)**2 + (p.y-py)**2);
+    }
+
+    canvas.addEventListener('mousedown', (e)=>{
+      const pos = getPos(e);
+      const n = nodeAt(pos);
+      if(n){ dragNode = n; canvas.style.cursor='grabbing'; }
+    });
+    window.addEventListener('mouseup', ()=>{ dragNode = null; canvas.style.cursor='grab'; });
+    canvas.addEventListener('mousemove', (e)=>{
+      const pos = getPos(e);
+      if(dragNode){
+        dragNode.x = pos.x; dragNode.y = pos.y;
+        tooltip.style.display = 'none';
+        return;
+      }
+      const n = nodeAt(pos);
+      hoverNode = n || null;
+      const edge = !n ? edgeAt(pos) : null;
+      if(n){
+        tooltip.style.display='block';
+        tooltip.style.left = (pos.clientX + 12) + 'px';
+        tooltip.style.top = (pos.clientY + 12) + 'px';
+        tooltip.textContent = n.title;
+      } else if(edge){
+        tooltip.style.display='block';
+        tooltip.style.left = (pos.clientX + 12) + 'px';
+        tooltip.style.top = (pos.clientY + 12) + 'px';
+        tooltip.textContent = 'shared: ' + edge.shared.slice(0,4).join(', ');
+      } else {
+        tooltip.style.display='none';
+      }
+    });
+    canvas.addEventListener('mouseleave', ()=>{ tooltip.style.display='none'; hoverNode=null; });
+  }
+
+  function escapeHtml(str){
+    return (str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderTab(){
+    pageRoot.innerHTML = '';
+    if(currentTab === 'notes') renderNotes();
+    else if(currentTab === 'tasks') renderTasks();
+    else if(currentTab === 'web') renderWeb();
+  }
+
+  function render(){
+    if(!loaded) return;
+    renderTab();
+  }
+
+  tabBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const target = btn.dataset.tab;
+      if(target === currentTab) return;
+      cancelAnimationFrame(webAnimFrame);
+      tabBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduce){
+        currentTab = target;
+        renderTab();
+        return;
+      }
+      pageRoot.classList.add('flip-out');
+      setTimeout(()=>{
+        currentTab = target;
+        renderTab();
+        pageRoot.classList.remove('flip-out');
+        pageRoot.classList.add('flip-in');
+        setTimeout(()=> pageRoot.classList.remove('flip-in'), 340);
+      }, 320);
+    });
+  });
+
+  // spiral rings
+  const spiral = document.getElementById('spiral');
+  for(let i=0;i<14;i++){
+    const ring = document.createElement('i');
+    spiral.appendChild(ring);
+  }
+
+  loadState();
+})();
+</script>
+</body>
+</html>
